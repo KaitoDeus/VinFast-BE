@@ -39,3 +39,18 @@ Desktop.ini
 app_logs.txt
 app_logs_new.txt
 .env
+
+### Custom Ignored Folders & Files ###
+database/
+docs/
+uploads/
+logs/
+temp/
+tmp/
+
+### Environment & Secrets ###
+.env
+.env.*
+!.env.example
+
+

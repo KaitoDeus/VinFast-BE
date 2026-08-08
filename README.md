@@ -1,90 +1,255 @@
-# Hệ Thống Quản Lý Bảo Hành Xe Điện (EV Warranty System)
+# Enterprise Electric Vehicle (EV) Warranty System
 
-## Mục lục
+[![Java 21](https://img.shields.io/badge/Java-21_LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.0-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0-85EA2D?style=for-the-badge&logo=openapi-initiative&logoColor=black)](http://localhost:8080/swagger-ui.html)
 
-1. [Giới Thiệu Sản Phẩm](#1-giới-thiệu-sản-phẩm)
-2. [Công Nghệ Sử Dụng](#2-công-nghệ-sử-dụng)
-3. [Hướng Dẫn Cài Đặt và Chạy Ứng Dụng (Local)](#3-hướng-dẫn-cài-đặt-và-chạy-ứng-dụng-local)
-4. [Danh Sách Tài Khoản Thử Nghiệm](#4-danh-sách-tài-khoản-thử-nghiệm)
+A enterprise-grade EV Warranty Management & Telemetry Analytics platform designed to connect Original Equipment Manufacturers (OEMs) with authorized Service Centers (SCs). Built on modern Java 21 LTS and Spring Boot 3.2, the system streamlines warranty claim lifecycles, supply chain inventory, safety recalls, and AI-driven predictive maintenance.
 
-## 1. Giới Thiệu Sản Phẩm
+---
 
-EV Warranty System là nền tảng quản lý bảo hành chuyên dụng cho hệ sinh thái xe điện, đóng vai trò cầu nối dữ liệu giữa Nhà sản xuất (OEM) và các Trung tâm dịch vụ (Service Centers). Hệ thống giúp chuẩn hóa quy trình tiếp nhận, xử lý yêu cầu bảo hành và quản trị dữ liệu vận hành của phương tiện.
+## 📋 Table of Contents
 
-### Các phân hệ chức năng chính:
+1. [Executive Summary](#1-executive-summary)
+2. [Key Features](#2-key-features)
+3. [Real-World Business Workflows](#3-real-world-business-workflows)
+   - [Workflow 1: Warranty Claim Lifecycle](#workflow-1-warranty-claim-lifecycle)
+   - [Workflow 2: AI Predictive Maintenance & Risk Scoring](#workflow-2-ai-predictive-maintenance--risk-scoring)
+   - [Workflow 3: Recall Campaign Broadcast & Execution](#workflow-3-recall-campaign-broadcast--execution)
+4. [System Architecture & Package Layout](#4-system-architecture--package-layout)
+5. [Technology Stack](#5-technology-stack)
+6. [Getting Started & Installation](#6-getting-started--installation)
+   - [Option A: Docker Compose (Recommended)](#option-a-docker-compose-recommended)
+   - [Option B: Manual Local Development](#option-b-manual-local-development)
+7. [Test Accounts & Access Matrix](#7-test-accounts--access-matrix)
+8. [API Documentation & Swagger UI](#8-api-documentation--swagger-ui)
+9. [License](#9-license)
 
-- **Service Center (Dành cho đại lý và xưởng dịch vụ):**
-  - Quản lý thông tin xe, lịch sử sửa chữa và tình trạng linh kiện.
-  - Phân tích rủi ro lỗi linh kiện bằng AI: Dự báo các bộ phận có khả năng hỏng hóc cao dựa trên dữ liệu vận hành và lịch sử dòng xe.
-  - Tiếp nhận và tạo yêu cầu bảo hành (Warranty Claims) trực tuyến.
-- **Manufacturer (Dành cho hãng sản xuất):**
-  - Giám sát toàn bộ hoạt động bảo hành trên hệ thống qua biểu đồ thời gian thực.
-  - Phê duyệt hoặc từ chối các yêu cầu bảo hành từ phía đại lý.
-  - Quản lý danh mục linh kiện, chính sách bảo hành và các chiến dịch triệu hồi (Recalls).
-- **Administration (Quản trị hệ thống):**
-  - Quản lý người dùng, phân quyền chi tiết theo vai trò (Role-based Access Control).
-  - Tối ưu hóa trải nghiệm người dùng với hệ thống trang báo lỗi chuyên nghiệp (403, 404, 500) giúp quá trình vận hành ổn định.
+---
 
-## 2. Công Nghệ Sử Dụng
+## 1. Executive Summary
 
-Hệ thống được phát triển trên kiến trúc nền tảng Java hiện đại (LTS mới nhất), tập trung vào tính bảo mật và khả năng xử lý dữ liệu tập trung.
+As the Electric Vehicle ecosystem rapidly expands, managing battery degradation, high-voltage powertrain warranties, component failures, and safety recalls requires centralized data exchange between automakers and repair centers.
 
-### Backend
+**EV Warranty System** provides:
+* **OEM Oversight**: Centralized approval workflow for warranty reimbursements, part catalogs, and safety recall broadcasts.
+* **Service Center Operational Efficiency**: Seamless claim filing, vehicle history tracking, customer appointments, and inventory allocation.
+* **AI Predictive Risk Engine**: Statistical analysis of fleet failure trends, battery health parameters, and mileage thresholds to forecast component breakdowns before catastrophic failure occurs.
 
-![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+---
 
-### Frontend
+## 2. Key Features
 
-![Thymeleaf](https://img.shields.io/badge/Thymeleaf-%23005F0F.svg?style=for-the-badge&logo=Thymeleaf&logoColor=white)
-![Bootstrap](https://img.shields.io/badge/bootstrap-%238511FA.svg?style=for-the-badge&logo=bootstrap&logoColor=white)
-![jQuery](https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+- 🔐 **Role-Based Access Control (RBAC)**: Fine-grained security for `ADMIN`, `EVM_STAFF`, `SC_STAFF`, and `SC_TECHNICIAN`.
+- ⚡ **AI Failure Prediction & Telemetry Risk Scoring**: Heuristic and statistical risk modeling based on mileage, vehicle model history, and component repeat failure rates.
+- 📋 **End-to-End Warranty Claim Processing**: Multi-stage state machine (`SUBMITTED` ➔ `UNDER_REVIEW` ➔ `APPROVED` / `REJECTED` ➔ `IN_PROGRESS` ➔ `COMPLETED`).
+- 🏬 **Parts & Supply Chain Inventory**: Real-time stock tracking across authorized service centers with low-stock alerts.
+- 📢 **Safety Recalls & Service Campaigns**: Target affected VIN ranges and vehicle models with automated repair scheduling.
+- 📊 **Real-time Analytics Dashboard**: Role-tailored dashboards powered by interactive charts and OpenAPI endpoints.
 
-### Database
+---
 
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+## 3. Real-World Business Workflows
 
-### DevOps & Tools
+### Workflow 1: Warranty Claim Lifecycle
 
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white)
+The following sequence illustrates how a warranty claim moves from customer intake at a Service Center through OEM review, technician assignment, and final repair completion:
 
-## 3. Hướng Dẫn Cài Đặt và Chạy Ứng Dụng (Local)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+    actor SCStaff as SC Staff
+    actor EVMStaff as OEM (EVM) Staff
+    actor SCTech as SC Technician
+    participant System as EV Warranty Platform
 
-### 3.1. Chạy bằng Docker Compose (Khuyên dùng)
+    Customer->>SCStaff: Brings vehicle with battery/BMS issue
+    SCStaff->>System: Searches VIN & verifies Warranty Eligibility
+    SCStaff->>System: Submits Warranty Claim (Status: DRAFT / SUBMITTED)
+    System-->>EVMStaff: Notifies OEM of pending claim
+    
+    alt OEM Review Phase
+        EVMStaff->>System: Evaluates Diagnosis Notes & Total Cost
+        alt Approved Claim
+            EVMStaff->>System: Approve Claim (Status: APPROVED)
+        else Rejected Claim
+            EVMStaff->>System: Reject Claim (Status: REJECTED)
+        end
+    end
 
-Đây là cách nhanh nhất để dựng toàn bộ môi trường (App + Database) mà không cần cài Java/Postgres trên máy.
+    opt Repair & Execution (If Approved)
+        SCStaff->>System: Assign Technician to Claim
+        SCTech->>System: Begins Repair & Replaces Component (Status: IN_PROGRESS)
+        SCTech->>System: Marks Repair Complete (Status: COMPLETED)
+        System->>System: Deducts Part Inventory & Updates Service History
+    end
+```
 
-1. Tại thư mục gốc dự án, chạy lệnh:
+---
 
+### Workflow 2: AI Predictive Maintenance & Risk Scoring
+
+The AI Engine analyzes fleet telemetry and past claim records to detect abnormal component failure trends and generate actionable recommendations:
+
+```mermaid
+flowchart TD
+    A[Vehicle Intake / Service Arrival] --> B{Fetch Fleet Claims & Telemetry Data}
+    B --> C[Aggregate Failure Rates by Vehicle Model]
+    B --> D[Compute Average Failure Mileage per Part]
+
+    C & D --> E[AI Anomaly & Risk Multiplier Engine]
+    
+    E --> F{Mileage > 80% Fleet Failure Threshold?}
+    F -- Yes --> G[Apply Predictive Risk Multiplier +40%]
+    F -- No --> H[Standard Failure Probability]
+    
+    E --> I{Repeat Failure Detected on VIN?}
+    I -- Yes --> J[Apply Repeat Anomaly Multiplier +100%]
+    I -- No --> H
+
+    G & J & H --> K[Calculate Final Probability & Severity Score]
+    
+    K --> L{Risk Level Classification}
+    L -- > 60% Risk --> M[CRITICAL: Immediate Diagnostic Required]
+    L -- 35% - 60% Risk --> N[HIGH: Inspect at Next Maintenance Interval]
+    L -- 15% - 35% Risk --> O[MEDIUM: Monitor Component Efficiency]
+    L -- < 15% Risk --> P[LOW: Routine Monitoring]
+```
+
+---
+
+### Workflow 3: Recall Campaign Broadcast & Execution
+
+Automakers broadcast safety recall campaigns for specific vehicle models or VIN lists, enabling automated service appointments at local service centers:
+
+```mermaid
+flowchart LR
+    A[OEM Manufacturer] -->|Create Service Campaign| B(Define Affected Models & VIN Ranges)
+    B -->|Publish Campaign| C[System Broadcasts Active Recall]
+    
+    C --> D{Service Center Vehicle Search}
+    D -->|VIN Matched| E[Flag Recall Eligibility]
+    E --> F[Book Customer Appointment]
+    F --> G[Perform Recall Remedy & Complete Claim]
+    G --> H[Update Campaign Completion Counter]
+```
+
+---
+
+## 4. System Architecture & Package Layout
+
+The application follows a **Domain-Driven / Feature-Based Modular Architecture** under `com.oem.evwarranty.*`:
+
+```text
+com.oem.evwarranty/
+├── EvWarrantyApplication.java
+│
+├── common/                               # Cross-cutting concerns & shared infrastructure
+│   ├── config/                           # SecurityConfig, WebConfig, OpenApiConfig, GlobalModelAdvice
+│   └── exception/                        # ResourceNotFoundException, BusinessLogicException, GlobalExceptionHandler
+│
+└── domain/                               # Self-contained business domains
+    ├── analytics/                        # AI Failure Prediction, Reports & Dashboards
+    ├── audit/                            # System Audit Logging
+    ├── campaign/                         # Service Campaigns & Safety Recalls
+    ├── claim/                            # Warranty Claims, Policies & Appointments
+    ├── customer/                         # Vehicle Owners & Customers
+    ├── inventory/                        # Parts Catalog, Stock Management & Supply Chain
+    ├── user/                             # Authentication, Users & Role-Based Access Control
+    └── vehicle/                          # Electric Vehicles & Component Telemetry
+```
+
+---
+
+## 5. Technology Stack
+
+* **Core Language**: Java 21 (LTS)
+* **Backend Framework**: Spring Boot 3.2.0 (Spring MVC, Spring Data JPA, Spring Security 6)
+* **Frontend Template Engine**: Thymeleaf + Bootstrap 5 + jQuery
+* **Database**: PostgreSQL 17
+* **API Specs**: OpenAPI 3.0 (Springdoc OpenAPI / Swagger UI)
+* **Build & Containerization**: Apache Maven & Docker Compose
+
+---
+
+## 6. Getting Started & Installation
+
+### Prerequisites
+
+* JDK 21 or higher
+* Docker & Docker Compose (Optional, for containerized run)
+* Git
+
+---
+
+### Option A: Docker Compose (Recommended)
+
+To launch the full stack (Spring Boot Application + PostgreSQL Database) in detached mode:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/KaitoDeus/EV-Warranty-System.git
+   cd EV-Warranty-System
+   ```
+
+2. Start services via Docker Compose:
    ```bash
    docker-compose up -d --build
    ```
 
-2. Truy cập ứng dụng: `http://localhost:8080`.
+3. Access the application at `http://localhost:8080`.
 
-### 4.2. Chạy Thủ Công (Development Mode)
+---
 
-Dành cho việc phát triển và debug code trên IDE.
+### Option B: Manual Local Development
 
-1. Khởi chạy riêng Database bằng Docker:
+1. Start PostgreSQL database container only:
    ```bash
    docker-compose up -d evwarranty-db
    ```
-2. Chạy ứng dụng bằng lệnh Maven hoặc Run trong IDE:
+
+2. Run the Spring Boot application using Maven:
    ```bash
    mvn spring-boot:run
    ```
-   _(Lưu ý: Cần cài đặt JDK 21 trên máy để chạy lệnh này)._
 
-## 4. Danh Sách Tài Khoản Thử Nghiệm
+3. Access the web interface at `http://localhost:8080`.
 
-Bạn có thể sử dụng các tài khoản sau để kiểm tra quy trình nghiệp vụ của từng vai trò:
+---
 
-| Vai trò        | Tên đăng nhập | Mật khẩu    | Chức năng kiểm thử                          |
-| :------------- | :------------ | :---------- | :------------------------------------------ |
-| Quản trị viên  | admin         | password123 | Toàn quyền quản trị và xem dashboard        |
-| Nhân viên SC   | scstaff       | password123 | Tiếp nhận xe và tạo yêu cầu bảo hành        |
-| Kỹ thuật viên  | sctech        | password123 | Xem phân tích AI và thực hiện sửa chữa      |
-| Nhân viên Hãng | evmstaff      | password123 | Duyệt yêu cầu bảo hành và quản lý linh kiện |
+## 7. Test Accounts & Access Matrix
+
+You can sign in with the following pre-configured credentials to evaluate role-based permissions:
+
+| Role | Username | Password | Access Scope & Operations |
+| :--- | :--- | :--- | :--- |
+| **System Administrator** | `admin` | `password123` | Full system administration, user management, global dashboards & audit logs |
+| **Service Center Staff** | `scstaff` | `password123` | Customer management, vehicle intake, warranty claim creation & appointment booking |
+| **Service Center Tech** | `sctech` | `password123` | AI risk prediction analysis, diagnostic execution & repair status updates |
+| **OEM Manufacturer Staff**| `evmstaff` | `password123` | Claim approvals/rejections, part catalog, inventory allocation & recall campaigns |
+
+---
+
+## 8. API Documentation & Swagger UI
+
+The system exposes RESTful API endpoints documented via OpenAPI 3.0 specs.
+
+When the application is running, open your browser to access the interactive Swagger UI:
+👉 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
+
+Raw OpenAPI JSON definition:
+👉 **[http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)**
+
+---
+
+## 9. License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+```text
+Copyright (c) 2026 EV Warranty System Contributors
+```
