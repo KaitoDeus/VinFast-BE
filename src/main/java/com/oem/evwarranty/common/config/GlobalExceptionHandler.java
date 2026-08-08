@@ -1,53 +1,53 @@
 package com.oem.evwarranty.common.config;
 
-
 import com.oem.evwarranty.common.exception.BusinessLogicException;
 import com.oem.evwarranty.common.exception.ResourceNotFoundException;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
-@ControllerAdvice
+import java.time.LocalDateTime;
+import java.util.Map;
+
+/**
+ * Global REST exception handler producing standardized JSON error responses.
+ */
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleNotFound(ResourceNotFoundException ex) {
-        return "error/404";
+    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleNoHandlerFound(NoHandlerFoundException ex) {
-        return "error/404";
+    public ResponseEntity<Map<String, Object>> handleNoHandlerFound(NoHandlerFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Requested endpoint not found");
     }
 
     @ExceptionHandler(BusinessLogicException.class)
-    public String handleBusinessError(BusinessLogicException ex, RedirectAttributes redirectAttributes,
-            jakarta.servlet.http.HttpServletRequest request) {
-        redirectAttributes.addFlashAttribute("error", ex.getMessage());
-        String referer = request.getHeader("Referer");
-        return "redirect:" + (referer != null ? referer : "/dashboard");
+    public ResponseEntity<Map<String, Object>> handleBusinessError(BusinessLogicException ex) {
+        return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleBadRequest(IllegalArgumentException ex, Model model) {
-        model.addAttribute("error", ex.getMessage());
-        return "error/400";
+    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleGeneralError(Exception ex, Model model) {
-        model.addAttribute("error", ex.getMessage());
-        return "error/500";
+    public ResponseEntity<Map<String, Object>> handleGeneralError(Exception ex) {
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", status.value(),
+                "error", status.getReasonPhrase(),
+                "message", message != null ? message : "An error occurred"
+        ));
     }
 }
-
-

@@ -1,10 +1,7 @@
 package com.oem.evwarranty.common.config;
 
-import com.oem.evwarranty.domain.user.Role;
-import com.oem.evwarranty.domain.user.User;
-
-
 import com.oem.evwarranty.domain.user.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,11 +14,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
 
 /**
- * Spring Security Configuration for role-based access control.
+ * Pure REST API Spring Security Configuration.
  */
 @Configuration
 @EnableWebSecurity
@@ -55,47 +50,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                        .requestMatchers("/login", "/error").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/api/v1/**").authenticated()
-                        .requestMatchers("/sc/**").hasAnyRole("SC_STAFF", "SC_TECHNICIAN", "ADMIN")
-                        .requestMatchers("/evm/**").hasAnyRole("EVM_STAFF", "ADMIN")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/dashboard/**").authenticated()
-                        .requestMatchers("/reports/**").authenticated()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/evm/**").hasAnyRole("EVM_STAFF", "ADMIN")
+                        .requestMatchers("/api/v1/sc/**").hasAnyRole("SC_STAFF", "ADMIN")
+                        .requestMatchers("/api/v1/sctech/**").hasAnyRole("SC_TECHNICIAN", "ADMIN")
                         .anyRequest().authenticated())
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .failureUrl("/login?error=true")
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .logoutSuccessUrl("/login?logout=true")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                        .permitAll())
                 .exceptionHandling(ex -> ex
-                        .accessDeniedPage("/error/403"))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"" + accessDeniedException.getMessage() + "\"}");
+                        }))
                 .httpBasic(Customizer.withDefaults());
-
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
-        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
     }
-
-    @Bean
-    public SpringSecurityDialect springSecurityDialect() {
-        return new SpringSecurityDialect();
-    }
 }
-
-
-

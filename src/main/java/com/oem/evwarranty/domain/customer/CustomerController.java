@@ -1,28 +1,23 @@
 package com.oem.evwarranty.domain.customer;
 
-import com.oem.evwarranty.domain.vehicle.Vehicle;
-
-
-import com.oem.evwarranty.domain.customer.Customer;
-import com.oem.evwarranty.domain.customer.CustomerService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.Map;
 
 /**
- * Controller for Customer management (Service Center).
+ * REST Controller for Customer management (/api/v1/sc/customers).
  */
-@Controller
-@RequestMapping("/sc/customers")
-@Tag(name = "Customer Management", description = "Operations for managing vehicle owners and customers")
+@RestController
+@RequestMapping("/api/v1/sc/customers")
+@Tag(name = "Customer Management REST API", description = "Operations for managing vehicle owners and customers")
 public class CustomerController {
 
     private final CustomerService customerService;
@@ -33,91 +28,40 @@ public class CustomerController {
 
     @GetMapping
     @Operation(summary = "List customers", description = "Retrieve a paginated list of customers with search filtering")
-    public String list(Model model,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
+    public ResponseEntity<Page<Customer>> list(@RequestParam(defaultValue = "0") int page,
+                                                @RequestParam(defaultValue = "10") int size,
+                                                @RequestParam(required = false) String search) {
         Page<Customer> customers = customerService.searchCustomers(
                 search, PageRequest.of(page, size, Sort.by("createdAt").descending()));
-        model.addAttribute("customers", customers);
-        model.addAttribute("search", search);
-        return "sc/customers/list";
-    }
-
-    @GetMapping("/new")
-    public String createForm(Model model) {
-        model.addAttribute("customer", new Customer());
-        return "sc/customers/form";
+        return ResponseEntity.ok(customers);
     }
 
     @PostMapping
-    public String create(@Valid @ModelAttribute Customer customer,
-            BindingResult result,
-            RedirectAttributes redirectAttributes) {
-        if (result.hasErrors()) {
-            return "sc/customers/form";
-        }
-        try {
-            customerService.createCustomer(customer);
-            redirectAttributes.addFlashAttribute("success", "Customer created successfully");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "sc/customers/form";
-        }
-        return "redirect:/sc/customers";
+    @Operation(summary = "Create customer", description = "Register a new customer profile")
+    public ResponseEntity<Customer> create(@Valid @RequestBody Customer customer) {
+        Customer created = customerService.createCustomer(customer);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping("/{id}")
-    public String view(@PathVariable Long id, Model model) {
-        if (id == null)
-            throw new IllegalArgumentException("ID cannot be null");
+    @Operation(summary = "Get customer details", description = "Retrieve customer profile by ID")
+    public ResponseEntity<Customer> getById(@PathVariable Long id) {
         Customer customer = customerService.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-        model.addAttribute("customer", customer);
-        return "sc/customers/view";
+        return ResponseEntity.ok(customer);
     }
 
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        if (id == null)
-            throw new IllegalArgumentException("ID cannot be null");
-        Customer customer = customerService.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
-        model.addAttribute("customer", customer);
-        return "sc/customers/form";
+    @PutMapping("/{id}")
+    @Operation(summary = "Update customer", description = "Update customer details")
+    public ResponseEntity<Customer> update(@PathVariable Long id, @Valid @RequestBody Customer customer) {
+        Customer updated = customerService.updateCustomer(id, customer);
+        return ResponseEntity.ok(updated);
     }
 
-    @PostMapping("/{id}")
-    public String update(@PathVariable Long id,
-            @Valid @ModelAttribute Customer customer,
-            BindingResult result,
-            RedirectAttributes redirectAttributes) {
-        if (result.hasErrors()) {
-            return "sc/customers/form";
-        }
-        try {
-            if (id == null)
-                throw new IllegalArgumentException("ID cannot be null");
-            customerService.updateCustomer(id, customer);
-            redirectAttributes.addFlashAttribute("success", "Customer updated successfully");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/sc/customers";
-    }
-
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            if (id == null)
-                throw new IllegalArgumentException("ID cannot be null");
-            customerService.deleteCustomer(id);
-            redirectAttributes.addFlashAttribute("success", "Customer deleted successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Cannot delete customer: " + e.getMessage());
-        }
-        return "redirect:/sc/customers";
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete customer", description = "Delete a customer profile by ID")
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Customer deleted successfully"));
     }
 }
-
-

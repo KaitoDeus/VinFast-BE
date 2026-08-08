@@ -34,6 +34,11 @@ public class AuditLogService {
     public List<AuditLog> getLogsForResource(String type, Long id) {
         return auditLogRepository.findByResourceTypeAndResourceIdOrderByCreatedAtDesc(type, id);
     }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<AuditLog> findAll(org.springframework.data.domain.Pageable pageable) {
+        return auditLogRepository.findAll(pageable);
+    }
 }
 
 
