@@ -1,5 +1,6 @@
 package com.oem.evwarranty.domain.user;
 
+import com.oem.evwarranty.common.config.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,25 +27,30 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final JwtTokenProvider tokenProvider;
 
-    public AuthController(AuthenticationManager authenticationManager, UserService userService) {
+    public AuthController(AuthenticationManager authenticationManager, UserService userService, JwtTokenProvider tokenProvider) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping("/login")
-    @Operation(summary = "REST Login", description = "Authenticate credentials and receive user profile with assigned roles")
+    @Operation(summary = "REST Login", description = "Authenticate credentials and receive user profile with assigned roles and JWT token")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = tokenProvider.generateToken(authentication);
 
             User user = userService.findByUsername(loginRequest.getUsername()).orElse(null);
 
             return ResponseEntity.ok(Map.of(
                     "status", "success",
+                    "token", token,
+                    "tokenType", "Bearer",
                     "username", authentication.getName(),
                     "fullName", user != null ? user.getFullName() : authentication.getName(),
                     "email", user != null && user.getEmail() != null ? user.getEmail() : "",

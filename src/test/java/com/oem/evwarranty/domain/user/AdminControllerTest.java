@@ -35,6 +35,9 @@ public class AdminControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
+    private com.oem.evwarranty.common.config.JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
     private com.oem.evwarranty.domain.campaign.ServiceCampaignService campaignService;
 
     @MockBean
