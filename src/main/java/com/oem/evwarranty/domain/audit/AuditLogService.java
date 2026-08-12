@@ -1,10 +1,10 @@
 package com.oem.evwarranty.domain.audit;
 
-
-import com.oem.evwarranty.domain.audit.AuditLog;
-import com.oem.evwarranty.domain.audit.AuditLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -25,8 +25,6 @@ public class AuditLogService {
                 .resourceId(resourceId)
                 .details(details)
                 .build();
-        if (log == null)
-            return;
         auditLogRepository.save(log);
     }
 
@@ -36,9 +34,17 @@ public class AuditLogService {
     }
 
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<AuditLog> findAll(org.springframework.data.domain.Pageable pageable) {
+    public List<AuditLog> getLogsForUser(String username) {
+        return auditLogRepository.findByUsernameOrderByCreatedAtDesc(username);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLog> getLogsForUser(String username, Pageable pageable) {
+        return auditLogRepository.findByUsername(username, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLog> findAll(Pageable pageable) {
         return auditLogRepository.findAll(pageable);
     }
 }
-
-
