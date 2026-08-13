@@ -1,6 +1,7 @@
 package com.oem.evwarranty.domain.user;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class Role {
     @Column(length = 255)
     private String description;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "roles")
     @Builder.Default
     @ToString.Exclude

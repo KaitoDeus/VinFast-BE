@@ -22,7 +22,7 @@ public class ClaimAttachment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "warranty_claim_id", nullable = false)
+    @JoinColumn(name = "claim_id", nullable = false)
     private WarrantyClaim warrantyClaim;
 
     @Column(name = "file_name", nullable = false, length = 255)
