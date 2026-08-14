@@ -1,8 +1,8 @@
 package com.oem.evwarranty.domain.vehicle;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oem.evwarranty.domain.claim.ServiceHistory;
 import com.oem.evwarranty.domain.claim.WarrantyClaim;
-
 import com.oem.evwarranty.domain.customer.Customer;
 
 import jakarta.persistence.*;
@@ -43,13 +43,13 @@ public class Vehicle {
     @Column(length = 50)
     private String color;
 
-    @Column(length = 50)
+    @Column(name = "battery_type", length = 50)
     private String batteryType;
 
-    @Column
+    @Column(name = "battery_capacity")
     private Double batteryCapacity;
 
-    @Column(length = 50)
+    @Column(name = "motor_type", length = 50)
     private String motorType;
 
     @Column
@@ -79,14 +79,17 @@ public class Vehicle {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<VehiclePart> installedParts = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<WarrantyClaim> warrantyClaims = new ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ServiceHistory> serviceHistory = new ArrayList<>();
@@ -121,8 +124,3 @@ public class Vehicle {
         ACTIVE, INACTIVE, SOLD, SCRAPPED
     }
 }
-
-
-
-
-
