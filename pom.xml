@@ -162,7 +162,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
                 <configuration>
-                    <argLine>-Xmx256m -XX:+UseSerialGC -XX:+TieredCompilation -XX:TieredStopAtLevel=1</argLine>
+                    <argLine>-Xms128m -Xmx256m -XX:+UseSerialGC -XX:CICompilerCount=2 -XX:-TieredCompilation</argLine>
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
                 </configuration>
