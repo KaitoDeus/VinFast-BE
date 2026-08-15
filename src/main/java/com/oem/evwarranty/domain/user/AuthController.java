@@ -1,98 +1,74 @@
 package com.oem.evwarranty.domain.user;
 
-import com.oem.evwarranty.common.config.JwtTokenProvider;
+import com.oem.evwarranty.common.dto.ApiResponse;
+import com.oem.evwarranty.domain.user.dto.AuthDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-import java.util.stream.Collectors;
-
 /**
- * REST Controller for authentication (login, logout, active profile).
+ * REST Controller for Authentication (Login, Register, Forgot Password, Reset Password, Active Profile).
+ * Complies 100% with BACKEND_JAVA_SPECIFICATION.md for VinFast EV Platform.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
-@Tag(name = "Authentication API", description = "Endpoints for user login, token verification, and active profile retrieval")
+@Tag(name = "Authentication", description = "Các API đăng nhập, đăng ký và đặt lại mật khẩu OTP")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final UserService userService;
-    private final JwtTokenProvider tokenProvider;
+    private final AuthService authService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserService userService, JwtTokenProvider tokenProvider) {
-        this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.tokenProvider = tokenProvider;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/login")
-    @Operation(summary = "REST Login", description = "Authenticate credentials and receive user profile with assigned roles and JWT token")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-            
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = tokenProvider.generateToken(authentication);
+    @Operation(summary = "Đăng nhập hệ thống", description = "Xác thực email/username và mật khẩu, trả về Access Token và Refresh Token")
+    public ResponseEntity<ApiResponse<AuthDTO.LoginResponse>> login(@Valid @RequestBody AuthDTO.LoginRequest request) {
+        AuthDTO.LoginResponse response = authService.authenticate(request);
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", response));
+    }
 
-            User user = userService.findByUsername(loginRequest.getUsername()).orElse(null);
+    @PostMapping("/register")
+    @Operation(summary = "Đăng ký tài khoản người dùng mới", description = "Tạo tài khoản khách hàng mới với quyền CLIENT")
+    public ResponseEntity<ApiResponse<AuthDTO.RegisterResponse>> register(@Valid @RequestBody AuthDTO.RegisterRequest request) {
+        AuthDTO.RegisterResponse response = authService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Đăng ký tài khoản thành công", response));
+    }
 
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "token", token,
-                    "tokenType", "Bearer",
-                    "username", authentication.getName(),
-                    "fullName", user != null ? user.getFullName() : authentication.getName(),
-                    "email", user != null && user.getEmail() != null ? user.getEmail() : "",
-                    "roles", authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList())
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized", "message", "Invalid username or password"));
-        }
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Yêu cầu mã OTP 6 số để đặt lại mật khẩu qua email", description = "Gửi mã OTP 6 số qua email với thời hạn 5 phút và giới hạn 30s gửi lại")
+    public ResponseEntity<ApiResponse<AuthDTO.OtpResponse>> forgotPassword(@Valid @RequestBody AuthDTO.ForgotPasswordRequest request) {
+        AuthDTO.OtpResponse response = authService.sendPasswordResetOtp(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("Mã xác thực OTP đã được gửi đến email của bạn", response));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Xác thực mã OTP và thiết lập mật khẩu mới", description = "Kiểm tra mã OTP và cập nhật mật khẩu mới cho người dùng")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody AuthDTO.ResetPasswordRequest request) {
+        authService.resetPasswordWithOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("Mật khẩu của bạn đã được cập nhật thành công", null));
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Get active user profile", description = "Retrieve current authenticated user details and permissions")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized", "message", "Not authenticated"));
-        }
-
-        User user = userService.findByUsername(authentication.getName()).orElse(null);
-
-        return ResponseEntity.ok(Map.of(
-                "username", authentication.getName(),
-                "user", user != null ? user : Map.of(),
-                "roles", authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList())
-        ));
+    @Operation(summary = "Lấy thông tin tài khoản đang đăng nhập", description = "Trả về hồ sơ và quyền hạn của người dùng từ Access Token")
+    public ResponseEntity<ApiResponse<AuthDTO.UserSummary>> getCurrentUser(Authentication authentication) {
+        AuthDTO.UserSummary profile = authService.getCurrentUserProfile(authentication);
+        return ResponseEntity.ok(ApiResponse.success(profile));
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "REST Logout", description = "Logout user and invalidate active session")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+    @Operation(summary = "Đăng xuất hệ thống", description = "Hủy phiên đăng nhập của người dùng")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         if (authentication != null) {
             new SecurityContextLogoutHandler().logout(request, response, authentication);
         }
-        return ResponseEntity.ok(Map.of("status", "success", "message", "Logged out successfully"));
-    }
-
-    public static class LoginRequest {
-        private String username;
-        private String password;
-
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+        return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
     }
 }
