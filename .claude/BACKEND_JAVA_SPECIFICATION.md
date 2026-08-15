@@ -612,11 +612,12 @@ Tất cả các API được bảo mật yêu cầu Header: `Authorization: Bear
 
 ---
 
-### 4.10. Module Đặt cọc & Khách hàng tiềm năng (B2C Landing Pre-orders)
+### 4.10. Module Đặt cọc & Tự động Cấp Tài khoản Khách hàng (B2C Landing Pre-orders & Auto Provisioning)
 
 #### `POST /api/v1/preorders` - Khách đặt cọc xe máy điện từ Landing page
 - **Public API (Không cần Auth Token)**
-- **Request Body:**
+- **Mục tiêu nghiệp vụ:** Khi khách hàng gửi biểu mẫu đặt cọc, Backend tự động tạo tài khoản (Role: `CLIENT`), sinh mật khẩu tạm thời ngẫu nhiên, mã hóa lưu DB và gửi mật khẩu này đồng thời qua **Email** và **SMS** cho khách hàng.
+- **Request Body (JSON):**
   ```json
   {
     "fullName": "Trần Văn Bình",
@@ -627,6 +628,43 @@ Tất cả các API được bảo mật yêu cầu Header: `Authorization: Bear
     "content": "Tôi muốn nhận xe tại showroom VinFast Royal City"
   }
   ```
+- **Luồng Xử lý Nghiệp vụ Backend Java (Spring Boot):**
+  1. Kiểm tra trong bảng `USERS` theo `email` hoặc `phone`:
+     - Nếu đã tồn tại: Gán đơn `PREORDER` vào User hiện tại.
+     - Nếu chưa tồn tại: Tự động khởi tạo User mới với vai trò `CLIENT`.
+  2. Sinh mật khẩu ngẫu nhiên an toàn 8 ký tự (VD: `VF@8xK2m`):
+     ```java
+     public static String generateRandomPassword(int length) {
+         SecureRandom random = new SecureRandom();
+         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$!";
+         StringBuilder sb = new StringBuilder("VF@");
+         for (int i = 3; i < length; i++) {
+             sb.append(chars.charAt(random.nextInt(chars.length())));
+         }
+         return sb.toString();
+     }
+     ```
+  3. Mã hóa bằng `BCryptPasswordEncoder` và lưu vào Database.
+  4. Bắn sự kiện bất đồng bộ `@Async` gửi thông báo đa kênh:
+     - **Email Service:** Gửi email HTML thương hiệu VinFast chứa thông tin đơn hàng, tài khoản (Email) và mật khẩu tạm thời.
+     - **SMS / Zalo ZNS Gateway:** Gửi tin nhắn SMS OTP/Password về SĐT của khách hàng.
+  5. Lưu thông tin đơn đặt cọc vào bảng `PREORDERS` / `BOOKINGS`.
+- **Response 201 Created:**
+  ```json
+  {
+    "success": true,
+    "message": "Đơn đặt mua xe đã được ghi nhận. Tài khoản và mật khẩu tạm thời đã được gửi về Email và Số điện thoại của bạn.",
+    "data": {
+      "preorderId": "PO-2028-0918",
+      "accountCreated": true,
+      "email": "binh.tv@gmail.com",
+      "phone": "0988776655",
+      "scooterModel": "Klara S",
+      "redirectLoginUrl": "/login?email=binh.tv%40gmail.com"
+    }
+  }
+  ```
+
 
 ---
 

@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 public class PreOrderDTO {
 
     @Data
@@ -15,15 +17,21 @@ public class PreOrderDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Response {
-        private String id; // "PO-001"
+        private String id; // "PO-2028-0918"
+        private String preorderId; // Alias matching spec Section 4.10
         private Long numericId;
+        private boolean accountCreated;
         private String fullName;
         private String phone;
         private String email;
         private String color;
         private String scooterModel;
         private String content;
-        private String status; // "Pending", "Contacted", "Confirmed"
+        private String status; // "Pending", "Contacted", "Confirmed", "Canceled"
+        private BigDecimal depositAmount;
+        private String depositAmountFormatted;
+        private String redirectLoginUrl;
+        private String temporaryPassword; // Returned only if new account provisioned
         private String createdAt;
     }
 
@@ -47,6 +55,7 @@ public class PreOrderDTO {
         private String scooterModel;
 
         private String content;
+        private BigDecimal depositAmount;
     }
 
     @Data

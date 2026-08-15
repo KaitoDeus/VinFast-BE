@@ -19,6 +19,7 @@ import java.util.Map;
 /**
  * REST Controller for B2C Pre-orders & Landing Page Leads.
  * Base Path: /api/v1/preorders
+ * Complies with Section 4.10 of BACKEND_JAVA_SPECIFICATION.md.
  */
 @RestController
 @RequestMapping("/api/v1/preorders")
@@ -38,7 +39,7 @@ public class PreOrderController {
 
         PreOrderDTO.Response created = preOrderService.createPreOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Đăng ký thông tin thành công! Đội ngũ tư vấn sẽ liên hệ sớm nhất.", created));
+                .body(ApiResponse.success("Đơn đặt mua xe đã được ghi nhận. Tài khoản và mật khẩu tạm thời đã được gửi về Email và Số điện thoại của bạn.", created));
     }
 
     @GetMapping
@@ -60,6 +61,16 @@ public class PreOrderController {
         );
 
         return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('DISPATCHER', 'FLEET_MANAGER', 'SUPER_ADMIN', 'ADMIN', 'SC_STAFF')")
+    @Operation(summary = "Chi tiết đơn đặt cọc", description = "Xem chi tiết thông tin đơn đặt hàng, mẫu xe, màu sắc và yêu cầu khách hàng")
+    public ResponseEntity<ApiResponse<PreOrderDTO.Response>> getPreOrderById(@PathVariable Long id) {
+        return preOrderService.getPreOrderById(id)
+                .map(dto -> ResponseEntity.ok(ApiResponse.success(dto)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Không tìm thấy đơn đặt hàng với ID: " + id, "PREORDER_NOT_FOUND")));
     }
 
     @PatchMapping("/{id}/status")

@@ -43,7 +43,11 @@ public class ChatDTO {
         private String content;
         private List<String> attachmentUrls;
         private String timestamp;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("isOwn")
         private boolean isOwn;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("isRead")
         private boolean isRead;
     }
 
