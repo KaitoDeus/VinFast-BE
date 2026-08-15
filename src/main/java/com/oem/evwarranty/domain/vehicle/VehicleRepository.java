@@ -23,6 +23,19 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     boolean existsByVin(String vin);
 
+    Optional<Vehicle> findByLicensePlate(String licensePlate);
+
+    boolean existsByLicensePlate(String licensePlate);
+
+    @Query("SELECT v FROM Vehicle v WHERE " +
+            "(:query IS NULL OR :query = '' OR LOWER(v.model) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(v.modelName) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(v.licensePlate) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(v.vin) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+            "(:carType IS NULL OR v.carType = :carType) AND " +
+            "(:status IS NULL OR v.fleetStatus = :status)")
+    Page<Vehicle> findVehiclesWithFilters(@Param("query") String query,
+                                          @Param("carType") com.oem.evwarranty.common.enums.CarType carType,
+                                          @Param("status") com.oem.evwarranty.common.enums.VehicleStatus status,
+                                          Pageable pageable);
+
     @Query("SELECT v FROM Vehicle v WHERE v.customer.id = :customerId")
     List<Vehicle> findByCustomerId(@Param("customerId") Long customerId);
 

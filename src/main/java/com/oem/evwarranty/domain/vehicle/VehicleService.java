@@ -1,11 +1,16 @@
 package com.oem.evwarranty.domain.vehicle;
 
+import com.oem.evwarranty.common.config.CacheConfig;
+import com.oem.evwarranty.common.enums.CarType;
+import com.oem.evwarranty.common.enums.VehicleStatus;
 import com.oem.evwarranty.domain.customer.Customer;
 import com.oem.evwarranty.domain.customer.CustomerRepository;
 import com.oem.evwarranty.domain.inventory.Part;
 import com.oem.evwarranty.domain.inventory.PartRepository;
 import com.oem.evwarranty.domain.user.User;
 import com.oem.evwarranty.domain.user.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
@@ -17,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Service for Vehicle management operations and serial part installation tracking.
+ * Service for Vehicle management operations, caching, and serial part installation tracking.
  */
 @Service
 @Transactional
@@ -64,6 +69,25 @@ public class VehicleService {
         return vehicleRepository.searchVehicles(search, pageable);
     }
 
+    @Cacheable(value = CacheConfig.CACHE_VEHICLES, key = "#query + '-' + #carTypeStr + '-' + #statusStr + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
+    public Page<Vehicle> findVehiclesWithFilters(String query, String carTypeStr, String statusStr, @NonNull Pageable pageable) {
+        CarType carType = null;
+        if (carTypeStr != null && !carTypeStr.equalsIgnoreCase("ALL") && !carTypeStr.isBlank()) {
+            try {
+                carType = CarType.valueOf(carTypeStr.toUpperCase());
+            } catch (Exception ignored) {}
+        }
+
+        VehicleStatus status = null;
+        if (statusStr != null && !statusStr.equalsIgnoreCase("ALL") && !statusStr.isBlank()) {
+            try {
+                status = VehicleStatus.valueOf(statusStr.toUpperCase());
+            } catch (Exception ignored) {}
+        }
+
+        return vehicleRepository.findVehiclesWithFilters(query, carType, status, pageable);
+    }
+
     public List<Vehicle> findByCustomerId(Long customerId) {
         return vehicleRepository.findByCustomerId(customerId);
     }
@@ -76,13 +100,17 @@ public class VehicleService {
         return vehiclePartRepository.findByVehicleId(vehicleId);
     }
 
+    @CacheEvict(value = CacheConfig.CACHE_VEHICLES, allEntries = true)
     public Vehicle createVehicle(Vehicle vehicle, Long customerId) {
-        if (!isValidVin(vehicle.getVin())) {
-            throw new IllegalArgumentException("Invalid VIN format");
-        }
-
-        if (vehicleRepository.existsByVin(vehicle.getVin())) {
-            throw new IllegalArgumentException("VIN already exists");
+        if (vehicle.getVin() != null && !vehicle.getVin().isBlank()) {
+            if (!isValidVin(vehicle.getVin())) {
+                throw new IllegalArgumentException("Invalid VIN format");
+            }
+            if (vehicleRepository.existsByVin(vehicle.getVin())) {
+                throw new IllegalArgumentException("VIN already exists");
+            }
+        } else {
+            vehicle.setVin("VF" + (System.currentTimeMillis() % 100000000000000L));
         }
 
         if (customerId != null) {
@@ -101,23 +129,40 @@ public class VehicleService {
         return vehicleRepository.save(vehicle);
     }
 
+    @CacheEvict(value = CacheConfig.CACHE_VEHICLES, allEntries = true)
     public Vehicle updateVehicle(@NonNull Long id, Vehicle updatedVehicle) {
         return vehicleRepository.findById(id)
                 .map(vehicle -> {
-                    vehicle.setModel(updatedVehicle.getModel());
-                    vehicle.setMake(updatedVehicle.getMake());
-                    vehicle.setYear(updatedVehicle.getYear());
-                    vehicle.setColor(updatedVehicle.getColor());
-                    vehicle.setBatteryType(updatedVehicle.getBatteryType());
-                    vehicle.setBatteryCapacity(updatedVehicle.getBatteryCapacity());
-                    vehicle.setMotorType(updatedVehicle.getMotorType());
-                    vehicle.setMileage(updatedVehicle.getMileage());
-                    vehicle.setStatus(updatedVehicle.getStatus());
+                    if (updatedVehicle.getModel() != null) vehicle.setModel(updatedVehicle.getModel());
+                    if (updatedVehicle.getModelName() != null) vehicle.setModelName(updatedVehicle.getModelName());
+                    if (updatedVehicle.getBrand() != null) vehicle.setBrand(updatedVehicle.getBrand());
+                    if (updatedVehicle.getMake() != null) vehicle.setMake(updatedVehicle.getMake());
+                    if (updatedVehicle.getCarType() != null) vehicle.setCarType(updatedVehicle.getCarType());
+                    if (updatedVehicle.getLicensePlate() != null) vehicle.setLicensePlate(updatedVehicle.getLicensePlate());
+                    if (updatedVehicle.getDailyPrice() != null) vehicle.setDailyPrice(updatedVehicle.getDailyPrice());
+                    if (updatedVehicle.getYear() != null) vehicle.setYear(updatedVehicle.getYear());
+                    if (updatedVehicle.getColor() != null) vehicle.setColor(updatedVehicle.getColor());
+                    if (updatedVehicle.getTransmission() != null) vehicle.setTransmission(updatedVehicle.getTransmission());
+                    if (updatedVehicle.getCapacity() != null) vehicle.setCapacity(updatedVehicle.getCapacity());
+                    if (updatedVehicle.getRangeKm() != null) vehicle.setRangeKm(updatedVehicle.getRangeKm());
+                    if (updatedVehicle.getBatteryType() != null) vehicle.setBatteryType(updatedVehicle.getBatteryType());
+                    if (updatedVehicle.getBatteryCapacity() != null) vehicle.setBatteryCapacity(updatedVehicle.getBatteryCapacity());
+                    if (updatedVehicle.getBatteryFuelPercent() != null) vehicle.setBatteryFuelPercent(updatedVehicle.getBatteryFuelPercent());
+                    if (updatedVehicle.getTopSpeedKmh() != null) vehicle.setTopSpeedKmh(updatedVehicle.getTopSpeedKmh());
+                    if (updatedVehicle.getAccelerationSpec() != null) vehicle.setAccelerationSpec(updatedVehicle.getAccelerationSpec());
+                    if (updatedVehicle.getHeroImageUrl() != null) vehicle.setHeroImageUrl(updatedVehicle.getHeroImageUrl());
+                    if (updatedVehicle.getDescription() != null) vehicle.setDescription(updatedVehicle.getDescription());
+                    if (updatedVehicle.getUnitsCount() != null) vehicle.setUnitsCount(updatedVehicle.getUnitsCount());
+                    if (updatedVehicle.getMotorType() != null) vehicle.setMotorType(updatedVehicle.getMotorType());
+                    if (updatedVehicle.getMileage() != null) vehicle.setMileage(updatedVehicle.getMileage());
+                    if (updatedVehicle.getStatus() != null) vehicle.setStatus(updatedVehicle.getStatus());
+                    if (updatedVehicle.getFleetStatus() != null) vehicle.setFleetStatus(updatedVehicle.getFleetStatus());
                     return vehicleRepository.save(vehicle);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found with ID: " + id));
     }
 
+    @CacheEvict(value = CacheConfig.CACHE_VEHICLES, allEntries = true)
     public Vehicle updateMileage(Long vehicleId, Integer newMileage) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found with ID: " + vehicleId));
@@ -133,6 +178,7 @@ public class VehicleService {
         return vehicleRepository.save(vehicle);
     }
 
+    @CacheEvict(value = CacheConfig.CACHE_VEHICLES, allEntries = true)
     public void deleteVehicle(@NonNull Long id) {
         if (!vehicleRepository.existsById(id)) {
             throw new IllegalArgumentException("Vehicle not found with ID: " + id);
@@ -148,10 +194,6 @@ public class VehicleService {
         return vehicleRepository.countByStatus(status);
     }
 
-    /**
-     * Install a serial part on a vehicle.
-     * Automatically calculates warranty end date based on the catalog part's warrantyMonths.
-     */
     public VehiclePart installPart(Long vehicleId, Long partId, String serialNumber,
                                    String notes, String installerUsername) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
@@ -191,9 +233,6 @@ public class VehicleService {
         return vehiclePartRepository.save(vehiclePart);
     }
 
-    /**
-     * Remove or replace an installed part on a vehicle (sets status to REPLACED).
-     */
     public VehiclePart removePart(Long vehiclePartId) {
         VehiclePart vp = vehiclePartRepository.findById(vehiclePartId)
                 .orElseThrow(() -> new IllegalArgumentException("Installed part not found with ID: " + vehiclePartId));
