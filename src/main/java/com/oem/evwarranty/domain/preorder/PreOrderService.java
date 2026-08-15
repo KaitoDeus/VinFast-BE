@@ -195,24 +195,76 @@ public class PreOrderService {
     public void sendWelcomeNotification(String email, String fullName, String temporaryPassword, String scooterModel) {
         try {
             if (mailSender.isPresent()) {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(email);
-                message.setSubject("VinFast EV - Xác nhận đặt mua xe " + scooterModel + " & Cấp tài khoản quản trị");
-                message.setText(String.format(
-                        "Kính gửi Quý khách %s,\n\n" +
-                        "Cảm ơn Quý khách đã đặt cọc xe máy điện %s tại VinFast!\n" +
-                        "Hệ thống đã tự động khởi tạo tài khoản quản trị đơn hàng cho Quý khách:\n\n" +
-                        "- Tên đăng nhập: %s\n" +
-                        "- Mật khẩu tạm thời: %s\n\n" +
-                        "Vui lòng đăng nhập tại ứng dụng VinFast để theo dõi tiến độ giao xe.\n\n" +
-                        "Trân trọng,\nVinFast Customer Service",
-                        fullName, scooterModel, email, temporaryPassword
-                ));
-                mailSender.get().send(message);
+                JavaMailSender sender = mailSender.get();
+                jakarta.mail.internet.MimeMessage mimeMessage = sender.createMimeMessage();
+                org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+                helper.setTo(email);
+                helper.setSubject("⚡ [VinFast EV] Xác nhận đặt cọc xe " + scooterModel + " & Cấp tài khoản quản trị");
+
+                String htmlContent = String.format("""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <style>
+                                body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #1e293b; }
+                                .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+                                .header { background: linear-gradient(135deg, #0284c7 0%%, #0369a1 100%%); color: #ffffff; padding: 28px 24px; text-align: center; }
+                                .header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+                                .content { padding: 32px 28px; line-height: 1.6; }
+                                .badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-bottom: 16px; }
+                                .credentials-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; padding: 18px 20px; border-radius: 8px; margin: 20px 0; }
+                                .credential-item { margin: 8px 0; font-size: 15px; }
+                                .credential-label { color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: 600; }
+                                .credential-value { font-weight: 700; color: #0f172a; font-family: monospace; font-size: 16px; }
+                                .btn { display: inline-block; background: #0284c7; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-align: center; margin-top: 10px; }
+                                .footer { background: #f1f5f9; padding: 20px; text-align: center; font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                    <h1>VINFAST EV PLATFORM</h1>
+                                    <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">Xác nhận đặt cọc xe máy điện & Cấp tài khoản</p>
+                                </div>
+                                <div class="content">
+                                    <span class="badge">ĐẶT CỌC THÀNH CÔNG</span>
+                                    <p>Kính gửi Quý khách <strong>%s</strong>,</p>
+                                    <p>Cảm ơn Quý khách đã tin tưởng lựa chọn dòng xe máy điện <strong>%s</strong> của VinFast. Hệ thống đã tự động cấp tài khoản để Quý khách theo dõi tình trạng đơn đặt cọc và lịch bàn giao xe:</p>
+                                    
+                                    <div class="credentials-box">
+                                        <div class="credential-item">
+                                            <div class="credential-label">Tên đăng nhập (Email):</div>
+                                            <div class="credential-value">%s</div>
+                                        </div>
+                                        <div class="credential-item" style="margin-top: 12px;">
+                                            <div class="credential-label">Mật khẩu tạm thời:</div>
+                                            <div class="credential-value" style="color: #0284c7;">%s</div>
+                                        </div>
+                                    </div>
+
+                                    <p style="font-size: 14px; color: #64748b;">* Vì lý do bảo mật, Quý khách vui lòng đổi mật khẩu ngay sau lần đăng nhập đầu tiên.</p>
+                                    
+                                    <div style="text-align: center; margin-top: 24px;">
+                                        <a href="http://localhost:3000/login?email=%s" class="btn">ĐĂNG NHẬP NGAY</a>
+                                    </div>
+                                </div>
+                                <div class="footer">
+                                    <p style="margin: 0;">Hotline CSKH: <strong>1900 23 23 89</strong> | Email: cskh@vinfast.vn</p>
+                                    <p style="margin: 4px 0 0 0;">© 2028 VinFast Auto. All rights reserved.</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """, fullName, scooterModel, email, temporaryPassword, email);
+
+                helper.setText(htmlContent, true);
+                sender.send(mimeMessage);
+                log.info(">> [HTML EMAIL SENT] Successfully sent VinFast welcome email to {}", email);
             }
-            log.info(">> [NOTIFICATION] Welcome email sent to {} for preorder {} (Temp password: {})", email, scooterModel, temporaryPassword);
         } catch (Exception e) {
-            log.warn("Could not send email notification to {}: {}", email, e.getMessage());
+            log.warn("Could not send HTML email to {}: {}. (Will fall back to local log)", email, e.getMessage());
         }
     }
 
